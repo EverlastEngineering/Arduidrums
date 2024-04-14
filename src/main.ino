@@ -128,7 +128,7 @@ byte noteMap[4] = {OPEN_HI_HAT,SNARE_DRUM_1,LOW_TOM_2,CRASH_CYMBAL};
 
 //MIDI defines
 #define NOTE_ON_CMD 0x90
-#define NOTE_OFF_CMD 0x80
+#define NOTE_OFF_CMD 0x80 // i've now found that NOTE_ON with velocity of 0x00 is 'seen' as note off by logic and midi monitor, so I switched to using that
 #define DRUM_CHANNEL 0x09
 #define PIANO_CHANNEL 0x00
 #define MAX_MIDI_VELOCITY 127
@@ -211,6 +211,14 @@ void setup ()
 
   // end code from http://yaab-arduino.blogspot.com/2015/02/fast-sampling-from-analog-input.html
 
+  /**
+   * The DIDR (Data Input Disable Register) disconnects the digital inputs from which ever ADC channels you are using
+   * http://www.openmusiclabs.com/learning/digital/atmega-adc/
+  */
+  // DIDR0 = 0x01;
+  // DIDR1 = 0x01;
+  // these need to match the pins that are used for the ADC
+  DIDR0 |= 0b00111111; 
 } 
 
 // ADC complete ISR
@@ -253,12 +261,14 @@ void loop () {
   // on an UNO, this loop work occasionally causes ONE sample to be discarded, which is only 1/50,000 of a seconds' worth of data. That's great.
   inLoop = true;
 
+  noInterrupts();
   for (int i=0;i<CHANNELS;i++) {
     adcValue[i] = maxResults[i];
     maxResults[i] = 0;
   }
 
   inLoop = false;
+  interrupts();
 
   // This is where the real code needs to go to DO something with this.
   unsigned long now = millis();
