@@ -9,10 +9,10 @@ AltSoftSerial midiSerial; // 2 is RX, 3 is TX
  */
  
 // #define SERIAL_PLOT_MODE
-#define DEBUG
+// #define DEBUG
 
 #define MIN_THRESHOLD 30 //discard readings below this adc value
-#define MIN_NOTE_THRESHOLD 20 //minimum time allowed between notes on the same channel
+#define MIN_NOTE_THRESHOLD 10 //minimum time allowed between notes on the same channel
 #define MIN_BUTTON_HOLD_TIME 1000
 #define BUTTON_HOLD_PROGRAM_TIME 2000
 
@@ -276,6 +276,10 @@ void loop () {
     if (adcValue[i] > MIN_THRESHOLD) {
       long timeSinceLastNote = now - timeOfLastNote[i];
       byte velocity = adcValue[i] / 8;
+      // clamp
+      if (velocity > 63) velocity = 63;
+      velocity = velocity * 2;
+      
       if (velocity > lastNoteVelocity[i]) {
         channelArmed[i] = true;
       }
@@ -307,7 +311,7 @@ void loop () {
     else {
       long timeSinceLastNote = now - timeOfLastNote[i];
       if (timeSinceLastNote > MIN_NOTE_THRESHOLD && channelArmed[i] == false) {
-        channelArmed[i] = false;
+        channelArmed[i] = true;
       }
     }
   }
